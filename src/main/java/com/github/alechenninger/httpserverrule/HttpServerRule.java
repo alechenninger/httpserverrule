@@ -63,7 +63,7 @@ public interface HttpServerRule extends TestRule {
 
     public HttpServerRule build() {
       try {
-        HttpServer server = new UndertowHttpServer(id, config);
+        HttpServer server = new UndertowHttpServer(config);
 
         return keepRunning
             ? new LongRunningHttpServerRule(server, id)
