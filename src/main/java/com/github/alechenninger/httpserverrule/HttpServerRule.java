@@ -4,7 +4,6 @@ import org.junit.rules.TestRule;
 
 import java.io.IOException;
 import java.net.URL;
-import java.util.UUID;
 
 public interface HttpServerRule extends TestRule {
   URL urlForPath(String path);
@@ -14,23 +13,12 @@ public interface HttpServerRule extends TestRule {
   }
 
   class Builder {
-    private String id;
     private ServerConfig config;
     private boolean keepRunning = true;
 
     public Builder() {
-      this(UUID.randomUUID().toString());
-    }
-
-    public Builder(String id) {
-      withId(id);
       servingClasspathResources();
       keepRunning();
-    }
-
-    public Builder withId(String id) {
-      this.id = id;
-      return this;
     }
 
     public Builder servingClasspathResources() {
@@ -66,7 +54,7 @@ public interface HttpServerRule extends TestRule {
         HttpServer server = new UndertowHttpServer(config);
 
         return keepRunning
-            ? new LongRunningHttpServerRule(server, id)
+            ? new LongRunningHttpServerRule(server)
             : new ShortRunningHttpServerRule(server);
       } catch (IOException e) {
         throw new HttpServerRuleException(e);

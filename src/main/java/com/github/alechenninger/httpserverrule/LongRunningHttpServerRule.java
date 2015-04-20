@@ -6,45 +6,34 @@ import java.net.URL;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class LongRunningHttpServerRule extends ExternalResource implements HttpServerRule {
-  private final String serverId;
+  private final HttpServer server;
+  private final AtomicBoolean isRunning;
 
-  private final static Map<String, HttpServerAndStatus> servers =
-      Collections.synchronizedMap(new HashMap<>());
-
-  /**
-   * @param serverId Identifies the server so that subsequent instantiations of the same rule will
-   *    reuse a server with the same id if one exists and is already started.
-   */
-  public LongRunningHttpServerRule(HttpServer server, String serverId) {
-    this.serverId = serverId;
-
-    servers.putIfAbsent(serverId, new HttpServerAndStatus(server));
+  public LongRunningHttpServerRule(HttpServer server) {
+    this.server = server;
+    this.isRunning = new AtomicBoolean(false);
   }
 
   @Override
   public URL urlForPath(String path) {
-    return servers.get(serverId).server.urlForPath(path);
+    return server.urlForPath(path);
   }
 
   @Override
   protected void before() throws Throwable {
-    servers.get(serverId).start();
+    if (!isRunning.getAndSet(true)) {
+      Runtime.getRuntime().addShutdownHook(new Thread(this::stopServer));
+      server.start();
+    }
+
+    // TODO: await server is actually running?
   }
 
-  class HttpServerAndStatus {
-    private final HttpServer server;
-    private boolean isRunning = false;
-
-    HttpServerAndStatus(HttpServer server) {
-      this.server = server;
-    }
-
-    synchronized void start() {
-      isRunning = true;
-      server.start();
-      Runtime.getRuntime().addShutdownHook(new Thread(server::stop));
-    }
+  private void stopServer() {
+    System.out.println("Stopping long running http server...");
+    server.stop();
   }
 }

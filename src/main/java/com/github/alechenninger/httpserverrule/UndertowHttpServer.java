@@ -59,7 +59,7 @@ public class UndertowHttpServer implements HttpServer {
     try {
       return new URL("http://" + hostname + ":" + port + "/" + path.replaceAll("^/", ""));
     } catch (MalformedURLException e) {
-      throw new IllegalArgumentException(e);
+      throw new IllegalArgumentException("Path not valid: " + path, e);
     }
   }
 
